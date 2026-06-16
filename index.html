@@ -4,9 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>배송 경로</title>
-<!-- ▼▼▼ 여기 'YOUR_NAVER_CLIENT_ID' 부분을 본인 네이버 지도 Client ID(키)로 바꿔주세요 ▼▼▼ -->
 <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=2bssycplso"></script>
-<!-- ▲▲▲ -->
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; }
   #map { width:100%; height:100vh; background:#e8eef4; }
@@ -39,31 +37,49 @@
 <button id="locBtn" title="내 위치로 이동" onclick="goMyLocation()">📍</button>
 
 <script>
+// gzip 압축 바이트를 UTF-8 문자열로 해제
+async function gunzipToString(u8) {
+  var ds = new DecompressionStream("gzip");
+  var ab = await new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer();
+  return new TextDecoder("utf-8").decode(ab);
+}
+
 // ── 링크(#뒤)에 담긴 경로 데이터 읽기 ───────────────────────────
-function loadData() {
+// 새 링크는 gzip 압축(별명·주소·경로 모두 포함), 옛 링크는 비압축 — 자동 인식
+async function loadData() {
   var h = location.hash ? location.hash.substring(1) : "";
   if (!h) return null;
   try {
-    // URL-safe base64 → 표준 base64 → UTF-8 디코드 → JSON
     var b64 = h.replace(/-/g, "+").replace(/_/g, "/");
     while (b64.length % 4) b64 += "=";
-    var json = decodeURIComponent(escape(atob(b64)));
-    return JSON.parse(json);
+    var bin = atob(b64);
+    var u8 = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    var jsonStr;
+    if (u8.length > 1 && u8[0] === 0x1f && u8[1] === 0x8b) {   // gzip 매직넘버
+      jsonStr = await gunzipToString(u8);
+    } else {                                                   // 옛 비압축(UTF-8 JSON)
+      jsonStr = decodeURIComponent(escape(bin));
+    }
+    return JSON.parse(jsonStr);
   } catch (e) {
     return null;
   }
 }
 
-var DATA = loadData();
+var DATA = null;
 var map, infoWindow, polyline = null, myMarker = null, myWatch = null;
 
-if (!DATA || !DATA.m || !DATA.m.length) {
-  document.getElementById("msg").textContent =
-    "경로 데이터가 없습니다. 앱에서 보낸 링크 전체를 열어주세요.";
-} else {
-  document.getElementById("msg").style.display = "none";
-  initMap();
-}
+loadData().then(function (d) {
+  DATA = d;
+  if (!DATA || !DATA.m || !DATA.m.length) {
+    document.getElementById("msg").textContent =
+      "경로 데이터가 없습니다. 앱에서 보낸 링크 전체를 열어주세요.";
+  } else {
+    document.getElementById("msg").style.display = "none";
+    initMap();
+  }
+});
 
 // 마커 종류별 스타일
 function styleFor(type) {
