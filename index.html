@@ -143,6 +143,26 @@ function initMap() {
   }
 
   map.fitBounds(bounds, { top:70, right:60, bottom:90, left:60 });
+
+  // 통행료 라벨: 통행료 있는 구간의 도로 중간점에 '통행료 N원'
+  if (DATA.t && DATA.t.length) {
+    DATA.t.forEach(function(t) {
+      new naver.maps.Marker({
+        position: new naver.maps.LatLng(t[0], t[1]),
+        map: map,
+        icon: {
+          content: '<div style="background:#fff;border:1.5px solid #E8730C;color:#C25A00;'
+            + 'font-size:11px;font-weight:bold;padding:2px 8px;border-radius:11px;'
+            + 'white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.35);">'
+            + '통행료 ' + t[2].toLocaleString() + '원</div>',
+          anchor: new naver.maps.Point(34, 11)
+        },
+        clickable: false,
+        zIndex: 50
+      });
+    });
+  }
+
   naver.maps.Event.addListener(map, "click", function(){ infoWindow.close(); });
 
   startLocation();   // 현재 위치 추적 시작
