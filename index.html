@@ -78,8 +78,7 @@ function initMap() {
     center: new naver.maps.LatLng(first[0], first[1]),
     zoom: 12,
     mapTypeControl: true,
-    zoomControl: true,
-    zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
+    zoomControl: false
   });
   infoWindow = new naver.maps.InfoWindow({ anchorSkew:true });
   var bounds = new naver.maps.LatLngBounds();
