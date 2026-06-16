@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>배송 경로</title>
+<!-- ▼▼▼ 여기 'YOUR_NAVER_CLIENT_ID' 부분을 본인 네이버 지도 Client ID(키)로 바꿔주세요 ▼▼▼ -->
+<script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=qdwhlqsuit"></script>
+<!-- ▲▲▲ -->
+<style>
+  html, body { margin:0; padding:0; width:100%; height:100%; }
+  #map { width:100%; height:100vh; background:#e8eef4; }
+  #msg { position:fixed; top:50%; left:0; right:0; text-align:center;
+         font-family:'맑은 고딕',sans-serif; color:#666; font-size:15px; }
+  .iw { padding:10px 12px; min-width:120px; font-family:'맑은 고딕',sans-serif;
+        font-size:13px; line-height:1.5; }
+  .iw b { display:block; margin-bottom:4px; color:#1A56C4; }
+  .iw-close { float:right; cursor:pointer; color:#999; font-size:16px;
+              margin:-4px -4px 0 0; }
+  #locBtn { position:fixed; right:14px; bottom:24px; z-index:200;
+            width:48px; height:48px; border-radius:50%; border:none;
+            background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+            font-size:22px; cursor:pointer; display:flex;
+            align-items:center; justify-content:center; }
+  #ctrl { position:fixed; top:12px; left:12px; z-index:200; background:#fff;
+          border-radius:8px; padding:8px 13px; box-shadow:0 2px 8px rgba(0,0,0,0.2);
+          font-size:13px; display:flex; align-items:center; gap:7px; cursor:pointer;
+          font-family:'맑은 고딕',sans-serif; }
+  #ctrl label { cursor:pointer; font-weight:600; color:#1A56C4; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="msg">지도를 불러오는 중…</div>
+<div id="ctrl" onclick="toggleRoute(event)">
+  <input type="checkbox" id="routeChk" checked style="width:15px;height:15px;cursor:pointer;">
+  <label for="routeChk">경로 표시</label>
+</div>
+<button id="locBtn" title="내 위치로 이동" onclick="goMyLocation()">📍</button>
+
+<script>
+// ── 링크(#뒤)에 담긴 경로 데이터 읽기 ───────────────────────────
+function loadData() {
+  var h = location.hash ? location.hash.substring(1) : "";
+  if (!h) return null;
+  try {
+    // URL-safe base64 → 표준 base64 → UTF-8 디코드 → JSON
+    var b64 = h.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    var json = decodeURIComponent(escape(atob(b64)));
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+}
+
+var DATA = loadData();
+var map, infoWindow, polyline = null, myMarker = null, myWatch = null;
+
+if (!DATA || !DATA.m || !DATA.m.length) {
+  document.getElementById("msg").textContent =
+    "경로 데이터가 없습니다. 앱에서 보낸 링크 전체를 열어주세요.";
+} else {
+  document.getElementById("msg").style.display = "none";
+  initMap();
+}
+
+// 마커 종류별 스타일
+function styleFor(type) {
+  if (type === "start") return { bg:"#7B2FBF", size:34, fs:12 };   // 출발(보라)
+  if (type === "end")   return { bg:"#C0392B", size:34, fs:12 };   // 도착(빨강)
+  return { bg:"#2A7D2E", size:30, fs:13 };                          // 배송지(초록)
+}
+
+function initMap() {
+  var first = DATA.m[0];
+  map = new naver.maps.Map("map", {
+    center: new naver.maps.LatLng(first[0], first[1]),
+    zoom: 12,
+    mapTypeControl: true,
+    zoomControl: true,
+    zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
+  });
+  infoWindow = new naver.maps.InfoWindow({ anchorSkew:true });
+  var bounds = new naver.maps.LatLngBounds();
+
+  // 배송지/출발/도착 마커
+  // m 항목 = [lat, lng, label, name, addr, type]
+  DATA.m.forEach(function(d) {
+    var lat=d[0], lng=d[1], label=d[2], name=d[3]||"", addr=d[4]||"", type=d[5]||"stop";
+    var st = styleFor(type);
+    var pos = new naver.maps.LatLng(lat, lng);
+    bounds.extend(pos);
+    var marker = new naver.maps.Marker({
+      position: pos, map: map,
+      zIndex: (type==="stop"?20:30),
+      icon: {
+        content: '<div style="background:'+st.bg+';width:'+st.size+'px;height:'+st.size+'px;'
+          +'border-radius:50%;display:flex;align-items:center;justify-content:center;'
+          +'font-size:'+st.fs+'px;font-weight:bold;color:#fff;border:2px solid #fff;'
+          +'box-shadow:0 2px 6px rgba(0,0,0,0.4);line-height:1;">'+label+'</div>',
+        anchor: new naver.maps.Point(st.size/2, st.size/2)
+      },
+      title: name || label
+    });
+    naver.maps.Event.addListener(marker, "click", function() {
+      infoWindow.setContent(
+        '<div class="iw"><span class="iw-close" onclick="infoWindow.close();">×</span>'
+        + '<b>' + label + (name ? ". " + name : "") + '</b>'
+        + (addr ? addr : "") + '</div>');
+      infoWindow.open(map, marker);
+    });
+  });
+
+  // 경로선: 상세 도로경로(p)가 있으면 그걸로, 없으면 배송지 직선 연결
+  if (DATA.p && DATA.p.length > 1) {
+    polyline = new naver.maps.Polyline({
+      map: map,
+      path: DATA.p.map(function(p){ return new naver.maps.LatLng(p[0], p[1]); }),
+      strokeColor:"#1A56C4", strokeWeight:4, strokeOpacity:0.75, strokeStyle:"solid"
+    });
+  } else {
+    polyline = new naver.maps.Polyline({
+      map: map,
+      path: DATA.m.map(function(d){ return new naver.maps.LatLng(d[0], d[1]); }),
+      strokeColor:"#2A6E1A", strokeWeight:3, strokeOpacity:0.6, strokeStyle:"shortdot"
+    });
+  }
+
+  map.fitBounds(bounds, { top:70, right:60, bottom:90, left:60 });
+  naver.maps.Event.addListener(map, "click", function(){ infoWindow.close(); });
+
+  startLocation();   // 현재 위치 추적 시작
+}
+
+// ── 현재 위치(휴대폰 GPS) 실시간 표시 ──────────────────────────
+function startLocation() {
+  if (!navigator.geolocation) return;
+  myWatch = navigator.geolocation.watchPosition(function(pos) {
+    var ll = new naver.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+    if (!myMarker) {
+      myMarker = new naver.maps.Marker({
+        position: ll, map: map, zIndex: 999,
+        icon: {
+          content: '<div style="width:18px;height:18px;border-radius:50%;'
+            +'background:#2D7FF9;border:3px solid #fff;'
+            +'box-shadow:0 0 0 4px rgba(45,127,249,0.3),0 1px 4px rgba(0,0,0,0.4);"></div>',
+          anchor: new naver.maps.Point(12, 12)
+        }
+      });
+    } else {
+      myMarker.setPosition(ll);
+    }
+  }, function(err) {
+    // 권한 거부/실패 시 조용히 무시 (지도는 그대로 보임)
+  }, { enableHighAccuracy:true, maximumAge:3000, timeout:15000 });
+}
+
+function goMyLocation() {
+  if (myMarker) { map.setCenter(myMarker.getPosition()); map.setZoom(15); }
+  else if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      map.setCenter(new naver.maps.LatLng(pos.coords.latitude, pos.coords.longitude));
+      map.setZoom(15);
+    }, function(){ alert("위치를 가져오지 못했습니다. 위치 권한을 허용해 주세요."); },
+    { enableHighAccuracy:true });
+  } else { alert("이 브라우저는 위치 기능을 지원하지 않습니다."); }
+}
+
+function toggleRoute(ev) {
+  var chk = document.getElementById("routeChk");
+  if (ev && ev.target && ev.target.id !== "routeChk") chk.checked = !chk.checked;
+  if (polyline) polyline.setMap(chk.checked ? map : null);
+}
+</script>
+</body>
+</html>
