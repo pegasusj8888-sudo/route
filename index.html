@@ -15,6 +15,12 @@
   .iw b { display:block; margin-bottom:4px; color:#1A56C4; }
   .iw-close { float:right; cursor:pointer; color:#999; font-size:16px;
               margin:-4px -4px 0 0; }
+  .iw-addr { display:flex; align-items:flex-start; gap:6px; margin-top:2px; }
+  .iw-addr span { flex:1; word-break:keep-all; }
+  .iw-copy { flex:none; cursor:pointer; border:1px solid #1A56C4; background:#fff;
+             color:#1A56C4; font-size:11px; font-weight:bold; padding:2px 8px;
+             border-radius:6px; font-family:inherit; white-space:nowrap; }
+  .iw-copy:active { background:#1A56C4; color:#fff; }
   #locBtn { position:fixed; right:14px; bottom:24px; z-index:200;
             width:48px; height:48px; border-radius:50%; border:none;
             background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.3);
@@ -69,6 +75,39 @@ async function loadData() {
 
 var DATA = null;
 var map, infoWindow, polyline = null, myMarker = null, myWatch = null;
+var currentAddr = "";
+
+// HTML 특수문자 이스케이프 (주소·별명 안전 표시)
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                  .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// 현재 정보창의 주소를 클립보드로 복사
+function copyCurrentAddr(btn) {
+  if (!currentAddr) return;
+  var done = function() {
+    var old = btn.textContent;
+    btn.textContent = "복사됨";
+    setTimeout(function(){ btn.textContent = "복사"; }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(currentAddr).then(done).catch(function() {
+      fallbackCopy(currentAddr); done();
+    });
+  } else {
+    fallbackCopy(currentAddr); done();
+  }
+}
+function fallbackCopy(text) {
+  var ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand("copy"); } catch (e) {}
+  document.body.removeChild(ta);
+}
 
 loadData().then(function (d) {
   DATA = d;
@@ -119,10 +158,13 @@ function initMap() {
       title: name || label
     });
     naver.maps.Event.addListener(marker, "click", function() {
+      currentAddr = addr;
       infoWindow.setContent(
         '<div class="iw"><span class="iw-close" onclick="infoWindow.close();">×</span>'
-        + '<b>' + label + (name ? ". " + name : "") + '</b>'
-        + (addr ? addr : "") + '</div>');
+        + '<b>' + escapeHtml(label + (name ? ". " + name : "")) + '</b>'
+        + (addr ? '<div class="iw-addr"><span>' + escapeHtml(addr) + '</span>'
+            + '<button class="iw-copy" onclick="copyCurrentAddr(this)">복사</button></div>' : "")
+        + '</div>');
       infoWindow.open(map, marker);
     });
   });
