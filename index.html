@@ -155,14 +155,15 @@ function initMap() {
     var lat=d[0], lng=d[1], label=d[2], name=d[3]||"", addr=d[4]||"", type=d[5]||"stop";
     var pos = new naver.maps.LatLng(lat, lng);
     bounds.extend(pos);
-    var bg = (type==="start") ? "#7B2FBF" : (type==="end" ? "#C0392B" : "#2A7D2E");
+    var bg = (type==="start") ? "#7B2FBF" : (type==="end" ? "#C0392B" : "#FFD400");
+    var fg = (type==="start" || type==="end") ? "#fff" : "#111";
     var content, anchor;
     var isPill = /[^0-9]/.test(label);   // 출발/도착, 또는 '16,17'처럼 합쳐진 라벨
     if (!isPill) {
       // 배송지(단일 번호): 숫자 원형 핀
       content = '<div class="ovl" style="background:'+bg+';width:23px;height:23px;'
         +'border-radius:50%;display:flex;align-items:center;justify-content:center;'
-        +'font-size:11px;font-weight:bold;color:#fff;border:2px solid #fff;'
+        +'font-size:13px;font-weight:bold;color:'+fg+';border:2px solid #fff;'
         +'box-shadow:0 2px 6px rgba(0,0,0,0.4);line-height:1;">'+label+'</div>';
       anchor = new naver.maps.Point(11.5, 11.5);
     } else {
@@ -170,7 +171,7 @@ function initMap() {
       var w = label.length * 11 + 22;   // 대략적 너비(중심 정렬용)
       content = '<div class="ovl" style="background:'+bg+';display:inline-flex;'
         +'align-items:center;justify-content:center;padding:3px 9px;border-radius:12px;'
-        +'white-space:nowrap;font-size:11px;font-weight:bold;color:#fff;border:2px solid #fff;'
+        +'white-space:nowrap;font-size:11px;font-weight:bold;color:'+fg+';border:2px solid #fff;'
         +'box-shadow:0 2px 6px rgba(0,0,0,0.4);line-height:1;">'+label+'</div>';
       anchor = new naver.maps.Point(w/2, 11);
     }
@@ -205,8 +206,8 @@ function initMap() {
         new naver.maps.Marker({
           position: new naver.maps.LatLng(p[0], p[1]), map: map, zIndex: 100,
           icon: { content:'<div class="ovl" style="width:11px;height:11px;border-radius:50%;'
-            +'background:#E53935;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);opacity:0.5;"></div>',
-            anchor: new naver.maps.Point(7,7) },
+            +'background:#E53935;box-shadow:0 1px 4px rgba(0,0,0,0.4);opacity:0.6;"></div>',
+            anchor: new naver.maps.Point(6,6) },
           clickable: false
         });
       });
