@@ -7,14 +7,16 @@
 <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=2bssycplso"></script>
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; }
-  #map { width:100%; height:100vh; background:#1b1f24;
-         filter: invert(1) hue-rotate(180deg); }
+  #map { width:100%; height:100vh; background:#e8eef4; }
+  body.dark #map { background:#1b1f24; filter: invert(1) hue-rotate(180deg); }
+  body.dark #map svg { filter: invert(1) hue-rotate(180deg); }
+  body.dark .ovl { filter: invert(1) hue-rotate(180deg); }
   #msg { position:fixed; top:50%; left:0; right:0; text-align:center;
          font-family:'맑은 고딕',sans-serif; color:#666; font-size:15px; }
   .iw { padding:10px 12px; min-width:120px; font-family:'맑은 고딕',sans-serif;
         font-size:13px; line-height:1.5; background:#fff; border-radius:10px;
-        box-shadow:0 2px 12px rgba(0,0,0,0.35);
-        filter: invert(1) hue-rotate(180deg); }
+        box-shadow:0 2px 12px rgba(0,0,0,0.35); }
+  body.dark .iw { filter: invert(1) hue-rotate(180deg); }
   .iw b { display:block; margin-bottom:4px; color:#1A56C4; }
   .iw-close { float:right; cursor:pointer; color:#999; font-size:16px;
               margin:-4px -4px 0 0; }
@@ -34,6 +36,11 @@
           font-size:13px; display:flex; align-items:center; gap:7px; cursor:pointer;
           font-family:'맑은 고딕',sans-serif; }
   #ctrl label { cursor:pointer; font-weight:600; color:#1A56C4; }
+  #ctrl2 { position:fixed; top:54px; left:12px; z-index:200; background:#fff;
+           border-radius:8px; padding:8px 13px; box-shadow:0 2px 8px rgba(0,0,0,0.2);
+           font-size:13px; display:flex; align-items:center; gap:7px; cursor:pointer;
+           font-family:'맑은 고딕',sans-serif; }
+  #ctrl2 label { cursor:pointer; font-weight:600; color:#1A56C4; }
 </style>
 </head>
 <body>
@@ -42,6 +49,10 @@
 <div id="ctrl" onclick="toggleRoute(event)">
   <input type="checkbox" id="routeChk" checked style="width:15px;height:15px;cursor:pointer;">
   <label for="routeChk">경로 표시</label>
+</div>
+<div id="ctrl2" onclick="toggleDark(event)">
+  <input type="checkbox" id="darkChk" checked style="width:15px;height:15px;cursor:pointer;">
+  <label for="darkChk">다크모드</label>
 </div>
 <button id="locBtn" title="내 위치로 이동" onclick="goMyLocation()">📍</button>
 
@@ -155,7 +166,7 @@ function initMap() {
       position: pos, map: map,
       zIndex: (type==="stop"?20:30),
       icon: {
-        content: '<div style="filter:invert(1) hue-rotate(180deg);background:'+st.bg+';width:'+st.size+'px;height:'+st.size+'px;'
+        content: '<div class="ovl" style="background:'+st.bg+';width:'+st.size+'px;height:'+st.size+'px;'
           +'border-radius:50%;display:flex;align-items:center;justify-content:center;'
           +'font-size:'+st.fs+'px;font-weight:bold;color:#fff;border:2px solid #fff;'
           +'box-shadow:0 2px 6px rgba(0,0,0,0.4);line-height:1;">'+label+'</div>',
@@ -199,7 +210,7 @@ function initMap() {
         position: new naver.maps.LatLng(t[0], t[1]),
         map: map,
         icon: {
-          content: '<div style="filter:invert(1) hue-rotate(180deg);background:#fff;border:1.5px solid #E8730C;color:#C25A00;'
+          content: '<div class="ovl" style="background:#fff;border:1.5px solid #E8730C;color:#C25A00;'
             + 'font-size:11px;font-weight:bold;padding:2px 8px;border-radius:11px;'
             + 'white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.35);">'
             + '통행료 ' + t[2].toLocaleString() + '원</div>',
@@ -213,17 +224,6 @@ function initMap() {
 
   naver.maps.Event.addListener(map, "click", function(){ infoWindow.close(); });
 
-  // 다크모드: 지도 타일은 어둡게 두고, 경로선(SVG)은 원래 색으로 되돌린다.
-  // 확대/이동으로 SVG가 다시 그려져도 유지되도록 idle마다 재적용.
-  function fixOverlayColors() {
-    var svgs = document.querySelectorAll("#map svg");
-    for (var i = 0; i < svgs.length; i++) {
-      svgs[i].style.filter = "invert(1) hue-rotate(180deg)";
-    }
-  }
-  fixOverlayColors();
-  naver.maps.Event.addListener(map, "idle", fixOverlayColors);
-
   startLocation();   // 현재 위치 추적 시작
 }
 
@@ -236,7 +236,7 @@ function startLocation() {
       myMarker = new naver.maps.Marker({
         position: ll, map: map, zIndex: 999,
         icon: {
-          content: '<div style="filter:invert(1) hue-rotate(180deg);width:18px;height:18px;border-radius:50%;'
+          content: '<div class="ovl" style="width:18px;height:18px;border-radius:50%;'
             +'background:#2D7FF9;border:3px solid #fff;'
             +'box-shadow:0 0 0 4px rgba(45,127,249,0.3),0 1px 4px rgba(0,0,0,0.4);"></div>',
           anchor: new naver.maps.Point(12, 12)
@@ -266,6 +266,15 @@ function toggleRoute(ev) {
   if (ev && ev.target && ev.target.id !== "routeChk") chk.checked = !chk.checked;
   if (polyline) polyline.setMap(chk.checked ? map : null);
 }
+
+// 다크모드 토글: 체크 시 어둡게, 해제 시 기본(밝은) 모드
+function toggleDark(ev) {
+  var chk = document.getElementById("darkChk");
+  if (ev && ev.target && ev.target.id !== "darkChk") chk.checked = !chk.checked;
+  document.body.classList.toggle("dark", chk.checked);
+}
+// 기본값: 다크모드 ON
+document.body.classList.add("dark");
 </script>
 </body>
 </html>
