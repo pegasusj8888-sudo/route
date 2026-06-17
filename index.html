@@ -190,6 +190,22 @@ function initMap() {
         + '</div>');
       infoWindow.open(map, marker);
     });
+    // 입구 표시: 핀에서 기록된 입구까지 빨간 점선 + 빨간 점 (m 항목 7번째 = [elat,elng])
+    var ent = d[6];
+    if (ent && ent.length === 2) {
+      new naver.maps.Polyline({
+        map: map,
+        path: [pos, new naver.maps.LatLng(ent[0], ent[1])],
+        strokeColor:"#E53935", strokeWeight:3, strokeStyle:"shortdash", strokeOpacity:0.95
+      });
+      new naver.maps.Marker({
+        position: new naver.maps.LatLng(ent[0], ent[1]), map: map, zIndex: 600,
+        icon: { content:'<div class="ovl" style="width:14px;height:14px;border-radius:50%;'
+          +'background:#E53935;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>',
+          anchor: new naver.maps.Point(8,8) },
+        clickable: false
+      });
+    }
   });
 
   // 경로선: 상세 도로경로가 있으면 그걸로, 없으면 배송지 직선 연결
