@@ -191,11 +191,22 @@ function initMap() {
     });
   });
 
-  // 경로선: 상세 도로경로(p)가 있으면 그걸로, 없으면 배송지 직선 연결
-  if (DATA.p && DATA.p.length > 1) {
+  // 경로선: 상세 도로경로가 있으면 그걸로, 없으면 배송지 직선 연결
+  // 새 링크는 델타정수(pd), 옛 링크는 절대좌표(p) — 둘 다 지원
+  var roadPts = [];
+  if (DATA.pd && DATA.pd.length) {
+    var alat = 0, alng = 0;
+    for (var i = 0; i < DATA.pd.length; i++) {
+      alat += DATA.pd[i][0]; alng += DATA.pd[i][1];
+      roadPts.push([alat / 1e5, alng / 1e5]);
+    }
+  } else if (DATA.p && DATA.p.length) {
+    roadPts = DATA.p;
+  }
+  if (roadPts.length > 1) {
     polyline = new naver.maps.Polyline({
       map: map,
-      path: DATA.p.map(function(p){ return new naver.maps.LatLng(p[0], p[1]); }),
+      path: roadPts.map(function(p){ return new naver.maps.LatLng(p[0], p[1]); }),
       strokeColor:"#1A56C4", strokeWeight:4, strokeOpacity:0.75, strokeStyle:"solid"
     });
   } else {
