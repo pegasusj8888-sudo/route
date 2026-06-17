@@ -157,16 +157,17 @@ function initMap() {
     bounds.extend(pos);
     var bg = (type==="start") ? "#7B2FBF" : (type==="end" ? "#C0392B" : "#2A7D2E");
     var content, anchor;
-    if (type === "stop") {
-      // 배송지: 숫자 원형 핀
+    var isPill = /[^0-9]/.test(label);   // 출발/도착, 또는 '16,17'처럼 합쳐진 라벨
+    if (!isPill) {
+      // 배송지(단일 번호): 숫자 원형 핀
       content = '<div class="ovl" style="background:'+bg+';width:23px;height:23px;'
         +'border-radius:50%;display:flex;align-items:center;justify-content:center;'
         +'font-size:11px;font-weight:bold;color:#fff;border:2px solid #fff;'
         +'box-shadow:0 2px 6px rgba(0,0,0,0.4);line-height:1;">'+label+'</div>';
       anchor = new naver.maps.Point(11.5, 11.5);
     } else {
-      // 출발/도착: 글자가 한 줄에 들어가는 알약(가로) 핀
-      var w = label.length * 13 + 22;   // 대략적 너비(중심 정렬용)
+      // 출발/도착/합쳐진 배송지: 글자가 한 줄에 들어가는 알약(가로) 핀
+      var w = label.length * 11 + 22;   // 대략적 너비(중심 정렬용)
       content = '<div class="ovl" style="background:'+bg+';display:inline-flex;'
         +'align-items:center;justify-content:center;padding:3px 9px;border-radius:12px;'
         +'white-space:nowrap;font-size:11px;font-weight:bold;color:#fff;border:2px solid #fff;'
