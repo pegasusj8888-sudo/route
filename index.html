@@ -8,15 +8,12 @@
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; }
   #map { width:100%; height:100vh; background:#e8eef4; }
-  body.dark #map { background:#1b1f24; filter: invert(1) hue-rotate(180deg); }
-  body.dark #map svg { filter: invert(1) hue-rotate(180deg); }
-  body.dark .ovl { filter: invert(1) hue-rotate(180deg); }
+  body.dark #map { background:#1b1f24; }
   #msg { position:fixed; top:50%; left:0; right:0; text-align:center;
          font-family:'맑은 고딕',sans-serif; color:#666; font-size:15px; }
   .iw { padding:10px 12px; min-width:120px; font-family:'맑은 고딕',sans-serif;
         font-size:13px; line-height:1.5; background:#fff; border-radius:10px;
         box-shadow:0 2px 12px rgba(0,0,0,0.35); }
-  body.dark .iw { filter: invert(1) hue-rotate(180deg); }
   .iw b { display:block; margin-bottom:4px; color:#1A56C4; }
   .iw-close { float:right; cursor:pointer; color:#999; font-size:16px;
               margin:-4px -4px 0 0; }
@@ -230,7 +227,7 @@ function initMap() {
     polyline = new naver.maps.Polyline({
       map: map,
       path: roadPts.map(function(p){ return new naver.maps.LatLng(p[0], p[1]); }),
-      strokeColor:"#1A56C4", strokeWeight:4, strokeOpacity:0.75, strokeStyle:"solid"
+      strokeColor:"#FF4FA3", strokeWeight:4, strokeOpacity:0.85, strokeStyle:"solid"
     });
   } else {
     polyline = new naver.maps.Polyline({
@@ -262,6 +259,10 @@ function initMap() {
   }
 
   naver.maps.Event.addListener(map, "click", function(){ infoWindow.close(); });
+
+  // 타일이 새로 로드되거나 지도가 움직인 뒤마다 타일에만 다크 적용
+  naver.maps.Event.addListener(map, "idle", applyDark);
+  applyDark();
 
   startLocation();   // 현재 위치 추적 시작
 }
@@ -306,11 +307,22 @@ function toggleRoute(ev) {
   if (polyline) polyline.setMap(chk.checked ? map : null);
 }
 
+// 다크모드: 지도 '타일(이미지/캔버스)'에만 반전 필터를 건다.
+// 핀·입구·경로선은 div/svg라 필터가 닿지 않아 색이 그대로 유지된다.
+function applyDark() {
+  if (!map) return;
+  var on = document.body.classList.contains("dark");
+  var f = on ? "invert(1) hue-rotate(180deg)" : "";
+  var tiles = document.querySelectorAll("#map img, #map canvas");
+  for (var i = 0; i < tiles.length; i++) tiles[i].style.filter = f;
+}
+
 // 다크모드 토글: 체크 시 어둡게, 해제 시 기본(밝은) 모드
 function toggleDark(ev) {
   var chk = document.getElementById("darkChk");
   if (ev && ev.target && ev.target.id !== "darkChk") chk.checked = !chk.checked;
   document.body.classList.toggle("dark", chk.checked);
+  applyDark();
 }
 // 기본값: 다크모드 ON
 document.body.classList.add("dark");
