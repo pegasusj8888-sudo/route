@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="referrer" content="origin">
 <title>배송 경로</title>
-<script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=2bssycplso"></script>
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; }
   #map { width:100%; height:100vh; background:#e8eef4; }
@@ -126,10 +125,34 @@ loadData().then(function (d) {
   if (!DATA || !DATA.m || !DATA.m.length) {
     document.getElementById("msg").textContent =
       "경로 데이터가 없습니다. 앱에서 보낸 링크 전체를 열어주세요.";
-  } else {
-    document.getElementById("msg").style.display = "none";
-    initMap();
+    return;
   }
+  document.getElementById("msg").style.display = "none";
+
+  // 네이버 인증 요청에는 '현재 페이지 주소 전체'가 들어간다. 우리 링크는 #뒤에
+  // 경로 데이터가 통째로 있어 주소가 수천 자라, 인증 URL이 한도를 넘어 막힌다.
+  // → 지도 스크립트를 부르기 전에 #해시를 잠깐 떼어 인증 URL을 짧게 만들고,
+  //   지도 로드 후 다시 붙인다(새로고침/북마크 대비).
+  var savedHash = location.hash;
+  try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+
+  var s = document.createElement("script");
+  s.src = "https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=2bssycplso";
+  s.onload = function () {
+    initMap();
+    setTimeout(function () {
+      try {
+        if (savedHash)
+          history.replaceState(null, "", location.pathname + location.search + savedHash);
+      } catch (e) {}
+    }, 2000);
+  };
+  s.onerror = function () {
+    var m = document.getElementById("msg");
+    m.style.display = "block";
+    m.textContent = "지도를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+  };
+  document.head.appendChild(s);
 });
 
 // 마커 종류별 스타일
