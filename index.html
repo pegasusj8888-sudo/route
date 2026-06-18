@@ -225,12 +225,12 @@ function initMap() {
         new naver.maps.Polyline({
           map: map, zIndex: 5,
           path: [pos, new naver.maps.LatLng(p[0], p[1])],
-          strokeColor:"#E53935", strokeWeight:3, strokeStyle:"shortdash", strokeOpacity:0.95
+          strokeColor:"#39FF14", strokeWeight:3, strokeStyle:"shortdash", strokeOpacity:0.95
         });
         new naver.maps.Marker({
           position: new naver.maps.LatLng(p[0], p[1]), map: map, zIndex: 100,
           icon: { content:'<div class="ovl" style="width:11px;height:11px;border-radius:50%;'
-            +'background:#E53935;box-shadow:0 1px 4px rgba(0,0,0,0.4);opacity:0.6;"></div>',
+            +'background:#39FF14;box-shadow:0 1px 4px rgba(0,0,0,0.4);opacity:0.6;"></div>',
             anchor: new naver.maps.Point(6,6) },
           clickable: false
         });
