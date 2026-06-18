@@ -48,7 +48,7 @@
   <label for="routeChk">경로 표시</label>
 </div>
 <div id="ctrl2" onclick="toggleDark(event)">
-  <input type="checkbox" id="darkChk" checked style="width:15px;height:15px;cursor:pointer;">
+  <input type="checkbox" id="darkChk" style="width:15px;height:15px;cursor:pointer;">
   <label for="darkChk">다크모드</label>
 </div>
 <button id="locBtn" title="내 위치로 이동" onclick="goMyLocation()">📍</button>
@@ -348,8 +348,6 @@ function toggleDark(ev) {
   document.body.classList.toggle("dark", chk.checked);
   applyDark();
 }
-// 기본값: 다크모드 ON
-document.body.classList.add("dark");
 </script>
 </body>
 </html>
