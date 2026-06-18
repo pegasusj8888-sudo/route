@@ -202,7 +202,7 @@ function initMap() {
       icon: { content: content, anchor: anchor },
       title: name || label
     });
-    naver.maps.Event.addListener(marker, "click", function() {
+    var openInfo = function() {
       currentAddr = addr;
       var tip = d[7] || "";
       infoWindow.setContent(
@@ -214,8 +214,10 @@ function initMap() {
             + 'color:#1565C0;white-space:pre-wrap;">💡 ' + escapeHtml(tip) + '</div>' : "")
         + '</div>');
       infoWindow.open(map, marker);
-    });
-    // 입구 표시: 핀에서 기록된 입구들까지 빨간 점선 + 빨간 점 (배송지핀보다 아래)
+    };
+    naver.maps.Event.addListener(marker, "click", openInfo);
+    // 입구 표시: 핀에서 기록된 입구까지 형광초록 점선 + 점.
+    // 입구 점을 눌러도 해당 배송지 정보가 열리도록 클릭 가능하게 둔다(겹쳐도 클릭됨).
     // d[6] = 입구 목록 [[lat,lng],...] (옛 링크는 단일 [lat,lng])
     var ent = d[6];
     if (ent && ent.length) {
@@ -227,13 +229,14 @@ function initMap() {
           path: [pos, new naver.maps.LatLng(p[0], p[1])],
           strokeColor:"#39FF14", strokeWeight:3, strokeStyle:"shortdash", strokeOpacity:0.95
         });
-        new naver.maps.Marker({
+        var edot = new naver.maps.Marker({
           position: new naver.maps.LatLng(p[0], p[1]), map: map, zIndex: 100,
           icon: { content:'<div class="ovl" style="width:11px;height:11px;border-radius:50%;'
-            +'background:#39FF14;box-shadow:0 1px 4px rgba(0,0,0,0.4);opacity:0.6;"></div>',
+            +'background:#39FF14;box-shadow:0 1px 4px rgba(0,0,0,0.4);opacity:0.6;cursor:pointer;"></div>',
             anchor: new naver.maps.Point(6,6) },
-          clickable: false
+          title: label + (name ? ". " + name : "") + " 입구"
         });
+        naver.maps.Event.addListener(edot, "click", openInfo);
       });
     }
   });
