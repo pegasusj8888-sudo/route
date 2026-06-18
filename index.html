@@ -204,11 +204,14 @@ function initMap() {
     });
     naver.maps.Event.addListener(marker, "click", function() {
       currentAddr = addr;
+      var tip = d[7] || "";
       infoWindow.setContent(
         '<div class="iw"><span class="iw-close" onclick="infoWindow.close();">×</span>'
         + '<b>' + escapeHtml(label + (name ? ". " + name : "")) + '</b>'
         + (addr ? '<div class="iw-addr"><span>' + escapeHtml(addr) + '</span>'
             + '<button class="iw-copy" onclick="copyCurrentAddr(this)">복사</button></div>' : "")
+        + (tip ? '<div style="margin-top:5px;padding-top:5px;border-top:1px solid #eee;'
+            + 'color:#1565C0;white-space:pre-wrap;">💡 ' + escapeHtml(tip) + '</div>' : "")
         + '</div>');
       infoWindow.open(map, marker);
     });
