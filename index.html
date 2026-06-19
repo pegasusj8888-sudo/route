@@ -337,12 +337,16 @@ function toggleRoute(ev) {
   if (polyline) polyline.setMap(chk.checked ? map : null);
 }
 
-// 다크모드: 지도 '타일(이미지/캔버스)'에만 반전 필터를 건다.
+// 다크모드: 지도 '타일(이미지/캔버스)'에만 필터를 건다.
+// invert로 길(흰색)→검정, 땅·건물(밝은 회색)→어두운 회색이 된다.
+// brightness로 어두운 회색 영역을 위로 펼쳐(=조금 밝게) 땅/건물을 더 벌리고,
+// (검정은 ×밝기로도 검정이라 길은 완전한 검정 유지) contrast로 분리를 살짝 강화.
 // 핀·입구·경로선은 div/svg라 필터가 닿지 않아 색이 그대로 유지된다.
+var DARK_FILTER = "invert(1) hue-rotate(180deg) brightness(1.8) contrast(1.1)";
 function applyDark() {
   if (!map) return;
   var on = document.body.classList.contains("dark");
-  var f = on ? "invert(1) hue-rotate(180deg)" : "";
+  var f = on ? DARK_FILTER : "";
   var tiles = document.querySelectorAll("#map img, #map canvas");
   for (var i = 0; i < tiles.length; i++) tiles[i].style.filter = f;
 }
