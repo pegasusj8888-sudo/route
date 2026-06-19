@@ -338,11 +338,13 @@ function toggleRoute(ev) {
 }
 
 // 다크모드: 지도 '타일(이미지/캔버스)'에만 필터를 건다.
-// invert로 길(흰색)→검정, 땅·건물(밝은 회색)→어두운 회색이 된다.
-// brightness로 어두운 회색 영역을 위로 펼쳐(=조금 밝게) 땅/건물을 더 벌리고,
-// (검정은 ×밝기로도 검정이라 길은 완전한 검정 유지) contrast로 분리를 살짝 강화.
+// [현재] 반전 없이 어둡게 → 길(흰색)은 회색으로 남고, 블록 땅(밝은 회색)은
+//   어둡게 가라앉는다. brightness(0.5)는 흰 길을 '중간 회색'에 고정하는 역할이라,
+//   contrast 값만 올리면 길 색은 그대로 둔 채 블록만 더 검게 만들 수 있다.
+// [참고] 예전처럼 '길=검정, 블록=회색'으로 되돌리려면 아래를
+//   "invert(1) hue-rotate(180deg) brightness(1.8) contrast(1.1)" 로 바꾸면 된다.
 // 핀·입구·경로선은 div/svg라 필터가 닿지 않아 색이 그대로 유지된다.
-var DARK_FILTER = "invert(1) hue-rotate(180deg) brightness(1.8) contrast(1.1)";
+var DARK_FILTER = "brightness(0.5) contrast(3.5)";
 function applyDark() {
   if (!map) return;
   var on = document.body.classList.contains("dark");
