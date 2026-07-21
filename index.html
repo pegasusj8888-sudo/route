@@ -29,6 +29,12 @@
             padding:8px 10px; font-family:inherit; text-align:center;
             box-shadow:0 1px 4px rgba(0,0,0,0.25); }
   .iw-nav:active { background:#02a94d; }
+  .iw-tmap { display:block; width:100%; box-sizing:border-box; margin-top:6px;
+             cursor:pointer; border:none; border-radius:7px;
+             background:#EE2453; color:#fff; font-size:13px; font-weight:bold;
+             padding:8px 10px; font-family:inherit; text-align:center;
+             box-shadow:0 1px 4px rgba(0,0,0,0.25); }
+  .iw-tmap:active { background:#c81742; }
   #locBtn { position:fixed; right:14px; bottom:24px; z-index:200;
             width:48px; height:48px; border-radius:50%; border:none;
             background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.3);
@@ -145,6 +151,48 @@ function naverNav(dlat, dlng, dname) {
     }, 1200);
   }
 }
+
+// T맵 버튼: data 속성에서 좌표·이름을 읽어 티맵 길찾기 실행
+function tmapFromBtn(btn) {
+  if (!btn) return;
+  var dlat = parseFloat(btn.getAttribute("data-lat"));
+  var dlng = parseFloat(btn.getAttribute("data-lng"));
+  var dname = btn.getAttribute("data-name") || "목적지";
+  if (isNaN(dlat) || isNaN(dlng)) { alert("길찾기 좌표가 없습니다."); return; }
+  tmapNav(dlat, dlng, dname);
+}
+
+// 티맵 앱으로 자동차 길찾기 (현재 위치 → 목적지 좌표).
+// 입구1이 있으면 입구1 좌표로 안내. rGoX=경도, rGoY=위도 (네이버와 X/Y 반대).
+function tmapNav(dlat, dlng, dname) {
+  var nm = encodeURIComponent(dname || "목적지");
+  var isAndroid = /android/i.test(navigator.userAgent);
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var scheme = "tmap://route?rGoName=" + nm + "&rGoX=" + dlng + "&rGoY=" + dlat;
+  if (isAndroid) {
+    // 인텐트 URL: 앱 없으면 자동으로 Play 스토어로(패키지 com.skt.tmap.ku)
+    var intentUrl = "intent://route?rGoName=" + nm + "&rGoX=" + dlng + "&rGoY=" + dlat
+      + "#Intent;scheme=tmap;action=android.intent.action.VIEW;"
+      + "category=android.intent.category.BROWSABLE;package=com.skt.tmap.ku;end";
+    location.href = intentUrl;
+    return;
+  }
+  var clickedAt = Date.now();
+  location.href = scheme;
+  if (isIOS) {
+    setTimeout(function() {
+      if (Date.now() - clickedAt < 2000) {
+        location.href = "http://itunes.apple.com/app/id431589174?mt=8";
+      }
+    }, 1500);
+  }
+}
+
+// infoWindow(네이버 지도 오버레이) 안의 onclick 에서 확실히 찾도록 전역에 등록
+window.navFromBtn = navFromBtn;
+window.naverNav = naverNav;
+window.tmapFromBtn = tmapFromBtn;
+window.tmapNav = tmapNav;
 
 // 현재 정보창의 주소를 클립보드로 복사
 function copyCurrentAddr(btn) {
@@ -273,6 +321,9 @@ function initMap() {
         + '<button class="iw-nav" data-lat="' + glat + '" data-lng="' + glng
             + '" data-name="' + escapeHtml(String(gname)) + '" onclick="navFromBtn(this)">'
             + '\uD83D\uDDFA\uFE0F 네이버지도 길찾기</button>'
+        + '<button class="iw-tmap" data-lat="' + glat + '" data-lng="' + glng
+            + '" data-name="' + escapeHtml(String(gname)) + '" onclick="tmapFromBtn(this)">'
+            + '\uD83D\uDE97 T맵 길찾기</button>'
         + (tip ? '<div style="margin-top:5px;padding-top:5px;border-top:1px solid #eee;'
             + 'color:#1565C0;white-space:pre-wrap;">💡 ' + escapeHtml(tip) + '</div>' : "")
         + '</div>');
