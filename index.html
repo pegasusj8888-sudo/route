@@ -23,6 +23,12 @@
              color:#1A56C4; font-size:11px; font-weight:bold; padding:2px 8px;
              border-radius:6px; font-family:inherit; white-space:nowrap; }
   .iw-copy:active { background:#1A56C4; color:#fff; }
+  .iw-nav { display:block; width:100%; box-sizing:border-box; margin-top:7px;
+            cursor:pointer; border:none; border-radius:7px;
+            background:#03C75A; color:#fff; font-size:13px; font-weight:bold;
+            padding:8px 10px; font-family:inherit; text-align:center;
+            box-shadow:0 1px 4px rgba(0,0,0,0.25); }
+  .iw-nav:active { background:#02a94d; }
   #locBtn { position:fixed; right:14px; bottom:24px; z-index:200;
             width:48px; height:48px; border-radius:50%; border:none;
             background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.3);
@@ -92,6 +98,42 @@ var currentAddr = "";
 function escapeHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
                   .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// 네이버 지도 앱으로 자동차 길찾기 (현재 위치 → 목적지 좌표)
+// 입구1이 있으면 입구1 좌표로 안내한다. 앱이 없으면 스토어/웹으로 대체.
+function naverNav(dlat, dlng, dname) {
+  var nm = encodeURIComponent(dname || "목적지");
+  var appname = encodeURIComponent(location.hostname || "delivery-route");
+  var scheme = "nmap://route/car?dlat=" + dlat + "&dlng=" + dlng
+             + "&dname=" + nm + "&appname=" + appname;
+  var isAndroid = /android/i.test(navigator.userAgent);
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  // 앱 미설치 대비: 잠시 후에도 페이지가 그대로면 스토어(iOS)/웹지도로 이동
+  var webFallback = "https://map.naver.com/p/directions/-/" + dlng + "," + dlat + ",,,/-/car";
+  if (isAndroid) {
+    // 인텐트 URL: 앱 없으면 자동으로 Play 스토어로
+    var intentUrl = "intent://route/car?dlat=" + dlat + "&dlng=" + dlng
+      + "&dname=" + nm + "&appname=" + appname
+      + "#Intent;scheme=nmap;action=android.intent.action.VIEW;"
+      + "category=android.intent.category.BROWSABLE;package=com.nhn.android.nmap;end";
+    location.href = intentUrl;
+    return;
+  }
+  var clickedAt = Date.now();
+  location.href = scheme;
+  if (isIOS) {
+    setTimeout(function() {
+      if (Date.now() - clickedAt < 2000) {
+        location.href = "http://itunes.apple.com/app/id311867728?mt=8";
+      }
+    }, 1500);
+  } else {
+    // PC 등: 앱이 안 열리면 웹 지도 길찾기로
+    setTimeout(function() {
+      if (Date.now() - clickedAt < 2000) { window.open(webFallback, "_blank"); }
+    }, 1200);
+  }
 }
 
 // 현재 정보창의 주소를 클립보드로 복사
@@ -205,11 +247,22 @@ function initMap() {
     var openInfo = function() {
       currentAddr = addr;
       var tip = d[7] || "";
+      // 길찾기 목적지: 입구1이 있으면 입구1 좌표, 없으면 배송지 좌표
+      var ent0 = null;
+      if (d[6] && d[6].length) {
+        ent0 = Array.isArray(d[6][0]) ? d[6][0] : d[6];
+      }
+      var glat = (ent0 && ent0.length===2) ? ent0[0] : lat;
+      var glng = (ent0 && ent0.length===2) ? ent0[1] : lng;
+      var gname = (name || addr || "목적지");
       infoWindow.setContent(
         '<div class="iw"><span class="iw-close" onclick="infoWindow.close();">×</span>'
         + '<b>' + escapeHtml(label + (name ? ". " + name : "")) + '</b>'
         + (addr ? '<div class="iw-addr"><span>' + escapeHtml(addr) + '</span>'
             + '<button class="iw-copy" onclick="copyCurrentAddr(this)">복사</button></div>' : "")
+        + '<button class="iw-nav" onclick="naverNav('
+            + glat + ',' + glng + ',' + JSON.stringify(gname) + ')">'
+            + '\uD83D\uDDFA\uFE0F 네이버지도 길찾기</button>'
         + (tip ? '<div style="margin-top:5px;padding-top:5px;border-top:1px solid #eee;'
             + 'color:#1565C0;white-space:pre-wrap;">💡 ' + escapeHtml(tip) + '</div>' : "")
         + '</div>');
