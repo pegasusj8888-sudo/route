@@ -163,15 +163,18 @@ function tmapFromBtn(btn) {
 }
 
 // 티맵 앱으로 자동차 길찾기 (현재 위치 → 목적지 좌표).
-// 입구1이 있으면 입구1 좌표로 안내. rGoX=경도, rGoY=위도 (네이버와 X/Y 반대).
+// 입구1이 있으면 입구1 좌표로 안내. goalx=경도, goaly=위도.
+// (rGoName/rGoX/rGoY 는 iOS 전용 → 안드로이드에서 목적지가 비어버림.
+//  goalname/goalx/goaly 는 iOS·안드로이드 양쪽 모두 동작한다.)
 function tmapNav(dlat, dlng, dname) {
   var nm = encodeURIComponent(dname || "목적지");
   var isAndroid = /android/i.test(navigator.userAgent);
   var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  var scheme = "tmap://route?rGoName=" + nm + "&rGoX=" + dlng + "&rGoY=" + dlat;
+  var query = "goalname=" + nm + "&goalx=" + dlng + "&goaly=" + dlat;
+  var scheme = "tmap://route?" + query;
   if (isAndroid) {
     // 인텐트 URL: 앱 없으면 자동으로 Play 스토어로(패키지 com.skt.tmap.ku)
-    var intentUrl = "intent://route?rGoName=" + nm + "&rGoX=" + dlng + "&rGoY=" + dlat
+    var intentUrl = "intent://route?" + query
       + "#Intent;scheme=tmap;action=android.intent.action.VIEW;"
       + "category=android.intent.category.BROWSABLE;package=com.skt.tmap.ku;end";
     location.href = intentUrl;
