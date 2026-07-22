@@ -116,21 +116,21 @@ function navFromBtn(btn) {
   naverNav(dlat, dlng, dname);
 }
 
-// 네이버 지도 앱으로 자동차 길찾기 (현재 위치 → 목적지 좌표)
+// 네이버 지도 앱으로 자동차 '내비게이션' 시작 (현재 위치 → 목적지 좌표).
 // 입구1이 있으면 입구1 좌표로 안내한다. 앱이 없으면 스토어/웹으로 대체.
+// route/car 는 '경로 확인 화면'을 띄우므로, navigation 을 써서 바로 안내를 시작한다.
 function naverNav(dlat, dlng, dname) {
   var nm = encodeURIComponent(dname || "목적지");
   var appname = encodeURIComponent(location.hostname || "delivery-route");
-  var scheme = "nmap://route/car?dlat=" + dlat + "&dlng=" + dlng
-             + "&dname=" + nm + "&appname=" + appname;
+  var query = "dlat=" + dlat + "&dlng=" + dlng + "&dname=" + nm + "&appname=" + appname;
+  var scheme = "nmap://navigation?" + query;
   var isAndroid = /android/i.test(navigator.userAgent);
   var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   // 앱 미설치 대비: 잠시 후에도 페이지가 그대로면 스토어(iOS)/웹지도로 이동
   var webFallback = "https://map.naver.com/p/directions/-/" + dlng + "," + dlat + ",,,/-/car";
   if (isAndroid) {
     // 인텐트 URL: 앱 없으면 자동으로 Play 스토어로
-    var intentUrl = "intent://route/car?dlat=" + dlat + "&dlng=" + dlng
-      + "&dname=" + nm + "&appname=" + appname
+    var intentUrl = "intent://navigation?" + query
       + "#Intent;scheme=nmap;action=android.intent.action.VIEW;"
       + "category=android.intent.category.BROWSABLE;package=com.nhn.android.nmap;end";
     location.href = intentUrl;
